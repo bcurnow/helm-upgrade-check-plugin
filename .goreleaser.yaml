@@ -4,7 +4,7 @@ project_name: helm-upgrade-check
 
 release:
   github:
-    owner: your-github-user
+    owner: bcurnow
     name: helm-upgrade-check
   draft: false
   prerelease: "false"
@@ -61,3 +61,6 @@ changelog:
       - '^test:'
       - Merge pull request
       - Merge branch
+
+env_files:
+  github_token: ~/.config/goreleaser/zhelm-update-plugin-github-token
