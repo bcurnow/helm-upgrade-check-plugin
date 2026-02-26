@@ -122,12 +122,7 @@ func main() {
 		repoList := info.Repos
 
 		var commands []string
-		if upgradable && !jsonOut {
-			// print human commands immediately when not JSON
-			repoListStr := strings.Join(repoList, ",")
-			upgradecheck.PrintUpgradeCommands(os.Stdout, rel.Name, rel.Namespace, repoListStr, chartName, upgradeVersion)
-		}
-		if upgradable && jsonOut {
+		if upgradable {
 			repoListStr := strings.Join(repoList, ",")
 			commands = []string{
 				fmt.Sprintf("helm get values --namespace %s %s -o yaml > %s.values", rel.Namespace, rel.Name, rel.Name),
@@ -173,6 +168,9 @@ func main() {
 		repoListStr := strings.Join(r.Repos, ",")
 		if r.Upgradable {
 			outOfDate.Printf(printFormat, r.ChartName, r.ReleaseName, r.Namespace, r.CurrentVersion, r.UpgradeVersion, repoListStr)
+            for _, cmd := range r.Commands {
+                fmt.Printf("  %s\n", cmd)
+            }
 		} else {
 			upToDate.Printf(printFormat, r.ChartName, r.ReleaseName, r.Namespace, r.CurrentVersion, "Up-to-date", repoListStr)
 		}
