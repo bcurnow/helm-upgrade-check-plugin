@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// Copyright 2024 The helm-upgrade-check authors
+// Copyright 2024 The helm-upgrade-plugin authors
 //
 // Licensed under the GNU General Public License v3.0 or later (the "License");
 // you may not use this file except in compliance with the License.

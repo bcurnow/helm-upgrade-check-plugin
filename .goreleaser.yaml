@@ -1,16 +1,16 @@
 version: 2
 
-project_name: helm-upgrade-check
+project_name: helm-upgrade-plugin
 
 release:
   github:
     owner: bcurnow
-    name: helm-upgrade-check
+    name: helm-upgrade-plugin
   draft: false
   prerelease: "false"
 
 builds:
-  - id: helm-upgrade-check
+  - id: helm-upgrade-plugin
     main: ./cmd/helm-upgrade-check
     binary: helm-upgrade-check
     env:
@@ -27,7 +27,7 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
 
 archives:
-  - id: helm-upgrade-check-archive
+  - id: helm-upgrade-plugin-archive
     format: tar.gz
     format_overrides:
       - goos: windows

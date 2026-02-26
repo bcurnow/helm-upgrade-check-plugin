@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Before installing `helm-upgrade-check`, ensure you have:
+Before installing `helm-upgrade-plugin`, ensure you have:
 
 - **Helm 3.1.0 or later** — [Install Helm](https://helm.sh/docs/intro/install/)
 - **kubectl** — configured to access your Kubernetes cluster
@@ -21,7 +21,7 @@ helm version
 Install the latest version directly from the GitHub repository:
 
 ```bash
-helm plugin install https://github.com/bcurnow/helm-upgrade-check.git
+helm plugin install https://github.com/bcurnow/helm-upgrade-plugin.git
 ```
 
 ### Method 2: Install from Local Source
@@ -101,7 +101,7 @@ If you installed from GitHub, pull the latest version and reinstall:
 
 ```bash
 helm plugin uninstall upgrade-check
-helm plugin install https://github.com/bcurnow/helm-upgrade-check.git
+helm plugin install https://github.com/bcurnow/helm-upgrade-plugin.git
 ```
 
 ### From Local Installation

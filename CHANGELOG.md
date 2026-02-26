@@ -78,23 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - On-demand chart searcher with caching
   - Semantic version comparison algorithm
 
-### Migration from Bash
 
-This release represents a complete rewrite from the original bash script (`helm-upgrade-check.sh`):
-
-**Bash Script Limitations:**
-- Direct shell command execution
-- No caching (fetched all charts every run)
-- String-based version comparison (incomplete)
-- Limited error handling
-
-**Go Plugin Advantages:**
-- Helm SDK integration (proper APIs, not CLI parsing)
-- Intelligent caching system
-- Semantic version comparison
-- Better error reporting
-- Faster execution for large clusters
-- Colored output for clarity
 
 ### Known Limitations
 

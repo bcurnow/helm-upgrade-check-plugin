@@ -1,10 +1,10 @@
-# helm-upgrade-check
+# helm-upgrade-plugin
 
 A Helm plugin that identifies deployed Helm releases and checks for available updates across configured chart repositories.
 
 ## Overview
 
-`helm-upgrade-check` scans your entire Kubernetes cluster for installed Helm releases and compares the deployed chart versions against the latest versions available in your configured repositories. For any releases that have newer versions available, the plugin provides direct copy-paste upgrade commands.
+`helm-upgrade-plugin` scans your entire Kubernetes cluster for installed Helm releases and compares the deployed chart versions against the latest versions available in your configured repositories. For any releases that have newer versions available, the plugin provides direct copy-paste upgrade commands.
 
 The plugin is designed for:
 - **Quick vulnerability/security audits** — identify outdated deployments at a glance
@@ -37,7 +37,7 @@ The plugin is designed for:
 ### Install the Plugin
 
 ```bash
-helm plugin install https://github.com/bcurnow/helm-upgrade-check.git
+helm plugin install https://github.com/bcurnow/helm-upgrade-plugin.git
 ```
 
 Or for direct installation from a local checkout:
