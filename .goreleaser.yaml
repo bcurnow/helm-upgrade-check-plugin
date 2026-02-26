@@ -1,0 +1,63 @@
+version: 2
+
+project_name: helm-upgrade-check
+
+release:
+  github:
+    owner: your-github-user
+    name: helm-upgrade-check
+  draft: false
+  prerelease: "false"
+
+builds:
+  - id: helm-upgrade-check
+    main: ./cmd/helm-upgrade-check
+    binary: helm-upgrade-check
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.Version={{.Version}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
+archives:
+  - id: helm-upgrade-check-archive
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - README.md
+      - LICENSE
+      - INSTALL.md
+      - CONTRIBUTING.md
+      - ARCHITECTURE.md
+      - CHANGELOG.md
+      - plugin.yaml
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+signs:
+  - artifacts: checksum
+    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+
+snapshot:
+  name_template: '{{ incpatch .Version }}-next'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - Merge pull request
+      - Merge branch
