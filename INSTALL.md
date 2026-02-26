@@ -21,7 +21,7 @@ helm version
 Install the latest version directly from the GitHub repository:
 
 ```bash
-helm plugin install https://github.com/yourusername/helm-upgrade-check.git
+helm plugin install https://github.com/bcurnow/helm-upgrade-check.git
 ```
 
 ### Method 2: Install from Local Source
@@ -29,7 +29,7 @@ helm plugin install https://github.com/yourusername/helm-upgrade-check.git
 Clone the repository and install locally:
 
 ```bash
-git clone https://github.com/yourusername/helm-update-plugin.git
+git clone https://github.com/bcurnow/helm-update-plugin.git
 cd helm-update-plugin
 make build
 helm plugin install .
@@ -41,7 +41,7 @@ helm plugin install .
 
 ```bash
 # Build from source
-git clone https://github.com/yourusername/helm-update-plugin.git
+git clone https://github.com/bcurnow/helm-update-plugin.git
 cd helm-update-plugin
 make build
 ```
@@ -101,7 +101,7 @@ If you installed from GitHub, pull the latest version and reinstall:
 
 ```bash
 helm plugin uninstall upgrade-check
-helm plugin install https://github.com/yourusername/helm-upgrade-check.git
+helm plugin install https://github.com/bcurnow/helm-upgrade-check.git
 ```
 
 ### From Local Installation
@@ -215,7 +215,7 @@ helm repo update
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/helm-update-plugin.git
+git clone https://github.com/bcurnow/helm-update-plugin.git
 cd helm-update-plugin
 
 # Install dependencies
@@ -248,6 +248,6 @@ GOOS=windows GOARCH=amd64 make build
 
 ## Getting Help
 
-- [GitHub Issues](https://github.com/yourusername/helm-update-plugin/issues) — Report bugs or request features
-- [GitHub Discussions](https://github.com/yourusername/helm-update-plugin/discussions) — Ask questions and discuss
+- [GitHub Issues](https://github.com/bcurnow/helm-update-plugin/issues) — Report bugs or request features
+- [GitHub Discussions](https://github.com/bcurnow/helm-update-plugin/discussions) — Ask questions and discuss
 - Check existing [documentation](README.md)

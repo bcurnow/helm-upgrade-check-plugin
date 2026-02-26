@@ -37,13 +37,13 @@ The plugin is designed for:
 ### Install the Plugin
 
 ```bash
-helm plugin install https://github.com/yourusername/helm-upgrade-check.git
+helm plugin install https://github.com/bcurnow/helm-upgrade-check.git
 ```
 
 Or for direct installation from a local checkout:
 
 ```bash
-git clone https://github.com/yourusername/helm-update-plugin.git
+git clone https://github.com/bcurnow/helm-update-plugin.git
 cd helm-update-plugin
 make build
 helm plugin install .
