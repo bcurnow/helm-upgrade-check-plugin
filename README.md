@@ -228,28 +228,6 @@ Outputs to `bin/helm-upgrade-check-1.0.0`.
 
 ## Troubleshooting
 
-### "could not find protocol handler for: https"
-
-**Cause** — chart repository URL uses HTTPS but protocol handlers were not initialized.
-
-**Solution** — This is typically resolved in newer versions. Ensure you're running the latest version of the plugin.
-
-### "unable to find chart information in any repo"
-
-**Cause** — the release uses a chart that has been removed from all configured repositories.
-
-**Solution** — Check if the chart repo was renamed or if you need to re-add a repository. You can see which repos are configured:
-
-```bash
-helm repo list
-```
-
-### "is a directory" error
-
-**Cause** — plugin tried to read a file path that is actually a directory.
-
-**Solution** — This was fixed in version 1.0.0. Contact the maintainers if you encounter this on a recent version.
-
 ### No output or blank screen
 
 **Cause** — plugin runs successfully but no releases found or all are up-to-date.
@@ -257,16 +235,6 @@ helm repo list
 **Solution** — This is normal behavior. Run `helm list --all-namespaces` to verify that releases exist in your cluster.
 
 **Solution** — Enable debug output with `-d` flag to see what's happening under the hood.
-
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run `make test` to ensure tests pass
-5. Submit a pull request
 
 ## License
 
