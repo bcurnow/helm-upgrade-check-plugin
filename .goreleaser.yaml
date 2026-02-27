@@ -37,8 +37,6 @@ archives:
       - README.md
       - LICENSE
       - INSTALL.md
-      - CONTRIBUTING.md
-      - ARCHITECTURE.md
       - CHANGELOG.md
       - plugin.yaml
 
