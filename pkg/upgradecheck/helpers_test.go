@@ -20,6 +20,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -27,13 +28,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
-	"helm.sh/helm/v3/pkg/registry"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCompareVersions(t *testing.T) {
@@ -169,7 +170,6 @@ func TestOCIRepositoryLookup(t *testing.T) {
 	assert.Equal(t, []string{"ociRepo"}, res.Repos)
 }
 
-
 func TestUpdateRepositories_Error(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "repos")
 	if err != nil {
@@ -220,7 +220,7 @@ func TestFindHelpers(t *testing.T) {
 	charts := []Chart{
 		{Name: "foo/bar", AppVersion: "1.2"},
 		{Name: "foo/baz", AppVersion: "2.3"},
-	}	
+	}
 	// verify free helper wrappers behave same as index methods
 	repos := FindRepos("bar", charts)
 	if len(repos) != 1 || repos[0] != "foo" {
@@ -236,9 +236,11 @@ func TestLoadIndex_FileURL(t *testing.T) {
 	indexYAML := `apiVersion: v1
 entries:
   demo:
-    - version: 0.1.0
+    - name: demo
+      version: 0.1.0
       appVersion: 4.5.6
 `
+	fmt.Println(indexYAML)
 	h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(indexYAML))
 	}))
@@ -250,6 +252,7 @@ entries:
 	idx, err := searcher.loadIndex(repoEntry)
 	assert.NoError(t, err)
 	if assert.NotNil(t, idx) {
+		fmt.Println(idx.Entries)
 		if ev := idx.Entries["demo"][0].Metadata.AppVersion; ev != "4.5.6" {
 			t.Errorf("unexpected appversion %s", ev)
 		}
