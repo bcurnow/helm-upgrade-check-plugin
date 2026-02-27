@@ -2,6 +2,6 @@ name: "upgrade-check"
 version: "1.0.0"
 usage: "check for available upgrades to installed Helm releases"
 description: "Identifies Helm releases deployed to the cluster and reports which have newer versions available in configured repositories. Provides upgrade commands for out-of-date releases."
-command: "helm-upgrade-check"
+command: "bin/helm-upgrade-check"
 ignoreFlags: false
 useTunnel: false
