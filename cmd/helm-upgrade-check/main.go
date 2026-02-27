@@ -23,19 +23,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"helm-update-plugin/pkg/upgradecheck"
+
+	"github.com/fatih/color"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 )
 
 var exitFunc = os.Exit
+var Version = "dev"
 
 func main() {
 	var update bool
 	var debug bool
 	var jsonOut bool
+	var version bool
 
 	flag.BoolVar(&update, "update", false, "run 'helm repo update' before checking")
 	flag.BoolVar(&update, "u", false, "shorthand for --update")
@@ -43,7 +46,13 @@ func main() {
 	flag.BoolVar(&debug, "d", false, "shorthand for --debug")
 	flag.BoolVar(&jsonOut, "json", false, "output results as JSON")
 	flag.BoolVar(&jsonOut, "j", false, "shorthand for --json")
+	flag.BoolVar(&version, "version", false, "print version and exit")
 	flag.Parse()
+
+	if version {
+		fmt.Println("helm-upgrade-check version", Version)
+		return
+	}
 
 	settings := cli.New()
 	if debug {
@@ -168,9 +177,9 @@ func main() {
 		repoListStr := strings.Join(r.Repos, ",")
 		if r.Upgradable {
 			outOfDate.Printf(printFormat, r.ChartName, r.ReleaseName, r.Namespace, r.CurrentVersion, r.UpgradeVersion, repoListStr)
-            for _, cmd := range r.Commands {
-                fmt.Printf("  %s\n", cmd)
-            }
+			for _, cmd := range r.Commands {
+				fmt.Printf("  %s\n", cmd)
+			}
 		} else {
 			upToDate.Printf(printFormat, r.ChartName, r.ReleaseName, r.Namespace, r.CurrentVersion, "Up-to-date", repoListStr)
 		}
