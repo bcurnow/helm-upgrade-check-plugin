@@ -11,8 +11,8 @@ release:
 
 builds:
   - id: helm-update-plugin
-    main: ./cmd/helm-update-check
-    binary: helm-update-check
+    main: ./cmd/helm-upgrade-check
+    binary: helm-upgrade-check
     env:
       - CGO_ENABLED=0
     goos:
