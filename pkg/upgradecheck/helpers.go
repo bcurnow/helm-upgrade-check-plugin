@@ -17,25 +17,25 @@
 package upgradecheck
 
 import (
-    "bytes"
-    "context"
-    "fmt"
-    "io"
-    "os"
-    "strings"
-    "sync"
-    "time"
+	"bytes"
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"strings"
+	"sync"
+	"time"
 
-    semver "github.com/Masterminds/semver/v3"
-    "helm.sh/helm/v3/pkg/action"
-    "helm.sh/helm/v3/pkg/chart"
-    "helm.sh/helm/v3/pkg/chart/loader"
-    "helm.sh/helm/v3/pkg/registry"
-    "helm.sh/helm/v3/pkg/cli"
-    "helm.sh/helm/v3/pkg/getter"
-    "helm.sh/helm/v3/pkg/repo"
-    "helm.sh/helm/v3/pkg/release"
-    "k8s.io/cli-runtime/pkg/genericclioptions"
+	semver "github.com/Masterminds/semver/v3"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/registry"
+	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v3/pkg/repo"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // CompareVersions returns true if v1 > v2 using a simple semver comparison.
@@ -43,84 +43,67 @@ import (
 // right.  When the initial segments are equal, the longer version string is
 // considered greater (e.g. "1.2.0" > "1.2").
 func CompareVersions(v1, v2 string) bool {
-    // Use Masterminds/semver which supports prerelease comparison and a
-    // robust semantic version implementation. Fall back to string
-    // comparison when parsing fails.
-    v1 = strings.TrimPrefix(v1, "v")
-    v2 = strings.TrimPrefix(v2, "v")
+	// Use Masterminds/semver which supports prerelease comparison and a
+	// robust semantic version implementation. Fall back to string
+	// comparison when parsing fails.
 
-	constraint := semver.NewConstraint("> " + v1)
-    sv1, err1 := semver.NewVersion(v1)
-    sv2, err2 := semver.NewVersion(v2)
-    if err1 == nil && err2 == nil {
-        if sv1.GreaterThan(sv2) {
-            return true
-        }
-        if sv1.Equal(sv2) {
-            // Fall back to segment-length preference (e.g. 1.2.0 > 1.2)
-            parts1 := strings.Split(v1, ".")
-            parts2 := strings.Split(v2, ".")
-            return len(parts1) > len(parts2)
-        }
-        return false
-    }
-    // Fallback: simple lexical/numeric comparison used previously.
-    parts1 := strings.Split(v1, ".")
-    parts2 := strings.Split(v2, ".")
-    for i := 0; i < len(parts1) && i < len(parts2); i++ {
-        var n1, n2 int
-        fmt.Sscanf(parts1[i], "%d", &n1)
-        fmt.Sscanf(parts2[i], "%d", &n2)
-        if n1 != n2 {
-            return n1 > n2
-        }
-    }
-    return len(parts1) > len(parts2)
+	// Use a constraint to compare v1 against v2, this will ignore any pre-release information
+	c, err := semver.NewConstraint("> " + v2)
+	if err != nil {
+		//v2 is not valid, if it's not a valid semver, don't consider it upgradable
+		return false
+	}
+	sv1, err := semver.NewVersion(v1)
+	if err != nil {
+		//v1 is not valid, if it's not a valid semver, don't consider it upgradable
+		return false
+	}
+	return c.Check(sv1)
 }
 
 // LoadRepoEntries reads the Helm repository YAML file specified by the
 // provided EnvSettings and returns the slice of *repo.Entry objects.  This
 // does not download any index files; it only parses the configuration.
 func LoadRepoEntries(settings *cli.EnvSettings) ([]*repo.Entry, error) {
-    repoFile := settings.RepositoryConfig
-    repos, err := repo.LoadFile(repoFile)
-    if err != nil {
-        return nil, err
-    }
-    entries := make([]*repo.Entry, len(repos.Repositories))
-    for i, e := range repos.Repositories {
-        entries[i] = e
-    }
-    return entries, nil
+	repoFile := settings.RepositoryConfig
+	repos, err := repo.LoadFile(repoFile)
+	if err != nil {
+		return nil, err
+	}
+	entries := make([]*repo.Entry, len(repos.Repositories))
+	for i, e := range repos.Repositories {
+		entries[i] = e
+	}
+	return entries, nil
 }
 
 // ChartSearchResult is the information returned from a chart lookup.
 // It contains the list of repositories where the chart exists and the
 // latest application version observed.
 type ChartSearchResult struct {
-    Repos   []string
-    Version string
+	Repos   []string
+	Version string
 }
 
 // ChartSearcher performs on-demand lookups of repository indexes to resolve
 // the latest version of a chart.  Results and index files are cached to avoid
 // repeated network requests when scanning many releases.
 type ChartSearcher struct {
-    repos     []*repo.Entry
-    getters   getter.Providers
-    idxCache  map[string]*repo.IndexFile
-    resultMap map[string]ChartSearchResult
+	repos     []*repo.Entry
+	getters   getter.Providers
+	idxCache  map[string]*repo.IndexFile
+	resultMap map[string]ChartSearchResult
 }
 
 // NewChartSearcher constructs a searcher using the provided repositories and
 // HTTP getter providers.
 func NewChartSearcher(repos []*repo.Entry, getters getter.Providers) *ChartSearcher {
-    return &ChartSearcher{
-        repos:     repos,
-        getters:   getters,
-        idxCache:  make(map[string]*repo.IndexFile),
-        resultMap: make(map[string]ChartSearchResult),
-    }
+	return &ChartSearcher{
+		repos:     repos,
+		getters:   getters,
+		idxCache:  make(map[string]*repo.IndexFile),
+		resultMap: make(map[string]ChartSearchResult),
+	}
 }
 
 // Search returns a ChartSearchResult for chartName.  If the result was
@@ -128,184 +111,184 @@ func NewChartSearcher(repos []*repo.Entry, getters getter.Providers) *ChartSearc
 // scans each repository index, updates the cache, and applies the "bitnami"
 // deduplication rule.
 func (s *ChartSearcher) Search(chartName string) ChartSearchResult {
-    if r, ok := s.resultMap[chartName]; ok {
-        return r
-    }
+	if r, ok := s.resultMap[chartName]; ok {
+		return r
+	}
 
-    type result struct {
-        repo    string
-        version string
-    }
+	type result struct {
+		repo    string
+		version string
+	}
 
-    ctx, cancel := context.WithCancel(context.Background())
-    defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-    wg := sync.WaitGroup{}
-    ch := make(chan result, len(s.repos))
-    sem := make(chan struct{}, 6) // concurrency limit
+	wg := sync.WaitGroup{}
+	ch := make(chan result, len(s.repos))
+	sem := make(chan struct{}, 6) // concurrency limit
 
-    for _, entry := range s.repos {
-        entry := entry
-        wg.Add(1)
-        go func() {
-            defer wg.Done()
-            select {
-            case sem <- struct{}{}:
-            case <-ctx.Done():
-                return
-            }
-            defer func() { <-sem }()
+	for _, entry := range s.repos {
+		entry := entry
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			select {
+			case sem <- struct{}{}:
+			case <-ctx.Done():
+				return
+			}
+			defer func() { <-sem }()
 
-            idx, err := s.loadIndex(entry)
-            if err != nil {
-                return
-            }
-            if versions, ok := idx.Entries[chartName]; ok && len(versions) > 0 {
-                v := ""
-                if versions[0].Metadata != nil && versions[0].Metadata.AppVersion != "" {
-                    v = versions[0].Metadata.AppVersion
-                } else if versions[0].Version != "" {
-                    v = versions[0].Version
-                }
-                ch <- result{repo: entry.Name, version: v}
-            }
-        }()
-    }
+			idx, err := s.loadIndex(entry)
+			if err != nil {
+				return
+			}
+			if versions, ok := idx.Entries[chartName]; ok && len(versions) > 0 {
+				v := ""
+				if versions[0].Metadata != nil && versions[0].Metadata.AppVersion != "" {
+					v = versions[0].Metadata.AppVersion
+				} else if versions[0].Version != "" {
+					v = versions[0].Version
+				}
+				ch <- result{repo: entry.Name, version: v}
+			}
+		}()
+	}
 
-    go func() {
-        wg.Wait()
-        close(ch)
-    }()
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
 
-    uniq := make(map[string]struct{})
-    var latest string
-    for r := range ch {
-        uniq[r.repo] = struct{}{}
-        if latest == "" || CompareVersions(r.version, latest) {
-            latest = r.version
-        }
-    }
-    reposFound := make([]string, 0, len(uniq))
-    for k := range uniq {
-        reposFound = append(reposFound, k)
-    }
+	uniq := make(map[string]struct{})
+	var latest string
+	for r := range ch {
+		uniq[r.repo] = struct{}{}
+		if latest == "" || CompareVersions(r.version, latest) {
+			latest = r.version
+		}
+	}
+	reposFound := make([]string, 0, len(uniq))
+	for k := range uniq {
+		reposFound = append(reposFound, k)
+	}
 
-    if len(reposFound) > 1 {
-        keep := make([]string, 0, len(reposFound))
-        for _, r := range reposFound {
-            if r == "bitnami" {
-                continue
-            }
-            keep = append(keep, r)
-        }
-        if len(keep) > 0 {
-            reposFound = keep
-        }
-    }
+	if len(reposFound) > 1 {
+		keep := make([]string, 0, len(reposFound))
+		for _, r := range reposFound {
+			if r == "bitnami" {
+				continue
+			}
+			keep = append(keep, r)
+		}
+		if len(keep) > 0 {
+			reposFound = keep
+		}
+	}
 
-    res := ChartSearchResult{Repos: reposFound, Version: latest}
-    s.resultMap[chartName] = res
-    return res
+	res := ChartSearchResult{Repos: reposFound, Version: latest}
+	s.resultMap[chartName] = res
+	return res
 }
 
 // ociClient defines the subset of registry.Client methods used by
 // loadIndex.  Keeping an interface simplifies testing because we can provide
 // lightweight fakes instead of the concrete *registry.Client type.
 type ociClient interface {
-    Tags(string) ([]string, error)
-    Pull(string, ...registry.PullOption) (*registry.PullResult, error)
+	Tags(string) ([]string, error)
+	Pull(string, ...registry.PullOption) (*registry.PullResult, error)
 }
 
 // registryClientFactory abstracts creation of an OCI client instance so tests
 // can inject a fake implementation.
 var registryClientFactory = func() (ociClient, error) {
-    return registry.NewClient()
+	return registry.NewClient()
 }
 
 func (s *ChartSearcher) loadIndex(entry *repo.Entry) (*repo.IndexFile, error) {
-    if idx, ok := s.idxCache[entry.Name]; ok {
-        return idx, nil
-    }
-    // OCI registry support: when a repo URL starts with oci:// we query the
-    // registry for tags, pull the latest chart and construct a minimal index
-    // entry containing the application version.  This keeps downstream search
-    // logic uniform whether charts come from normal repo indexes or OCI.
-    if strings.HasPrefix(entry.URL, "oci://") {
-        ref := strings.TrimPrefix(entry.URL, "oci://")
-        client, err := registryClientFactory()
-        if err != nil {
-            return nil, err
-        }
-        tags, err := client.Tags(ref)
-        if err != nil {
-            return nil, err
-        }
-        if len(tags) == 0 {
-            empty := &repo.IndexFile{Entries: map[string]repo.ChartVersions{}}
-            s.idxCache[entry.Name] = empty
-            return empty, nil
-        }
-        latest := tags[0]
-        pullRes, err := client.Pull(fmt.Sprintf("%s:%s", ref, latest))
-        if err != nil {
-            return nil, err
-        }
-        ch, err := loader.LoadArchive(bytes.NewReader(pullRes.Chart.Data))
-        if err != nil {
-            return nil, err
-        }
-        appv := ""
-        if ch.Metadata != nil {
-            appv = ch.Metadata.AppVersion
-            if appv == "" {
-                appv = ch.Metadata.Version
-            }
-        }
-        chartName := entry.Name
-        if i := strings.LastIndex(ref, "/"); i != -1 {
-            chartName = ref[i+1:]
-        }
-        idx := &repo.IndexFile{Entries: map[string]repo.ChartVersions{}}
-        idx.Entries[chartName] = repo.ChartVersions{&repo.ChartVersion{
-            Metadata: &chart.Metadata{
-                Version:    latest,
-                AppVersion: appv,
-            },
-            URLs: []string{entry.URL},
-        }}
-        s.idxCache[entry.Name] = idx
-        return idx, nil
-    }
+	if idx, ok := s.idxCache[entry.Name]; ok {
+		return idx, nil
+	}
+	// OCI registry support: when a repo URL starts with oci:// we query the
+	// registry for tags, pull the latest chart and construct a minimal index
+	// entry containing the application version.  This keeps downstream search
+	// logic uniform whether charts come from normal repo indexes or OCI.
+	if strings.HasPrefix(entry.URL, "oci://") {
+		ref := strings.TrimPrefix(entry.URL, "oci://")
+		client, err := registryClientFactory()
+		if err != nil {
+			return nil, err
+		}
+		tags, err := client.Tags(ref)
+		if err != nil {
+			return nil, err
+		}
+		if len(tags) == 0 {
+			empty := &repo.IndexFile{Entries: map[string]repo.ChartVersions{}}
+			s.idxCache[entry.Name] = empty
+			return empty, nil
+		}
+		latest := tags[0]
+		pullRes, err := client.Pull(fmt.Sprintf("%s:%s", ref, latest))
+		if err != nil {
+			return nil, err
+		}
+		ch, err := loader.LoadArchive(bytes.NewReader(pullRes.Chart.Data))
+		if err != nil {
+			return nil, err
+		}
+		appv := ""
+		if ch.Metadata != nil {
+			appv = ch.Metadata.AppVersion
+			if appv == "" {
+				appv = ch.Metadata.Version
+			}
+		}
+		chartName := entry.Name
+		if i := strings.LastIndex(ref, "/"); i != -1 {
+			chartName = ref[i+1:]
+		}
+		idx := &repo.IndexFile{Entries: map[string]repo.ChartVersions{}}
+		idx.Entries[chartName] = repo.ChartVersions{&repo.ChartVersion{
+			Metadata: &chart.Metadata{
+				Version:    latest,
+				AppVersion: appv,
+			},
+			URLs: []string{entry.URL},
+		}}
+		s.idxCache[entry.Name] = idx
+		return idx, nil
+	}
 
-    chartRepo, err := repo.NewChartRepository(entry, s.getters)
-    if err != nil {
-        return nil, err
-    }
+	chartRepo, err := repo.NewChartRepository(entry, s.getters)
+	if err != nil {
+		return nil, err
+	}
 
-    var path string
-    var tryErr error
-    attempts := 3
-    backoff := 500 * time.Millisecond
-    for i := 0; i < attempts; i++ {
-        path, tryErr = chartRepo.DownloadIndexFile()
-        if tryErr == nil {
-            break
-        }
-        if i < attempts-1 {
-            time.Sleep(backoff)
-            backoff *= 2
-        }
-    }
-    if tryErr != nil {
-        return nil, tryErr
-    }
+	var path string
+	var tryErr error
+	attempts := 3
+	backoff := 500 * time.Millisecond
+	for i := 0; i < attempts; i++ {
+		path, tryErr = chartRepo.DownloadIndexFile()
+		if tryErr == nil {
+			break
+		}
+		if i < attempts-1 {
+			time.Sleep(backoff)
+			backoff *= 2
+		}
+	}
+	if tryErr != nil {
+		return nil, tryErr
+	}
 
-    idx, err := repo.LoadIndexFile(path)
-    if err != nil {
-        return nil, err
-    }
-    s.idxCache[entry.Name] = idx
-    return idx, nil
+	idx, err := repo.LoadIndexFile(path)
+	if err != nil {
+		return nil, err
+	}
+	s.idxCache[entry.Name] = idx
+	return idx, nil
 }
 
 // UpdateRepositories iterates over the repositories defined in the provided
@@ -313,80 +296,80 @@ func (s *ChartSearcher) loadIndex(entry *repo.Entry) (*repo.IndexFile, error) {
 // repository fails to update.  It's essentially a programmatic equivalent of
 // `helm repo update`.
 func UpdateRepositories(settings *cli.EnvSettings) error {
-    repoFile := settings.RepositoryConfig
-    repos, err := repo.LoadFile(repoFile)
-    if err != nil {
-        return fmt.Errorf("failed to load repository file: %w", err)
-    }
+	repoFile := settings.RepositoryConfig
+	repos, err := repo.LoadFile(repoFile)
+	if err != nil {
+		return fmt.Errorf("failed to load repository file: %w", err)
+	}
 
-    getters := getter.All(settings)
-    for _, entry := range repos.Repositories {
-        chartRepo, err := repo.NewChartRepository(entry, getters)
-        if err != nil {
-            return fmt.Errorf("failed to create chart repository for %q: %w", entry.Name, err)
-        }
-        if _, err := chartRepo.DownloadIndexFile(); err != nil {
-            return fmt.Errorf("failed to download index file for %q: %w", entry.Name, err)
-        }
-    }
-    return nil
+	getters := getter.All(settings)
+	for _, entry := range repos.Repositories {
+		chartRepo, err := repo.NewChartRepository(entry, getters)
+		if err != nil {
+			return fmt.Errorf("failed to create chart repository for %q: %w", entry.Name, err)
+		}
+		if _, err := chartRepo.DownloadIndexFile(); err != nil {
+			return fmt.Errorf("failed to download index file for %q: %w", entry.Name, err)
+		}
+	}
+	return nil
 }
 
 // PrintUpgradeCommands writes the series of helm commands required to inspect
 // and upgrade a release to the supplied writer.  The commands are prefixed by
 // two spaces to visually nest them beneath the release row in the output.
 func PrintUpgradeCommands(w io.Writer, release, namespace, repos, chartName, version string) {
-    fmt.Fprintf(w, "  helm get values --namespace %s %s -o yaml > %s.values\n", namespace, release, release)
-    fmt.Fprintf(w, "  cat %s.values\n", release)
-    fmt.Fprintf(w, "  helm upgrade --namespace %s %s %s/%s --version %s --values %s.values\n", namespace, release, repos, chartName, version, release)
+	fmt.Fprintf(w, "  helm get values --namespace %s %s -o yaml > %s.values\n", namespace, release, release)
+	fmt.Fprintf(w, "  cat %s.values\n", release)
+	fmt.Fprintf(w, "  helm upgrade --namespace %s %s %s/%s --version %s --values %s.values\n", namespace, release, repos, chartName, version, release)
 }
 
 // convertReleaseList turns the Helm SDK's slice of *release.Release into the
 // simplified []upgradecheck.Release type used by the rest of the plugin.
 func convertReleaseList(list []*release.Release) []Release {
-    var out []Release
-    for _, rel := range list {
-        out = append(out, Release{
-            Name:       rel.Name,
-            Namespace:  rel.Namespace,
-            Chart:      rel.Chart.Name() + "-" + rel.Chart.Metadata.Version,
-            AppVersion: rel.Chart.Metadata.AppVersion,
-        })
-    }
-    return out
+	var out []Release
+	for _, rel := range list {
+		out = append(out, Release{
+			Name:       rel.Name,
+			Namespace:  rel.Namespace,
+			Chart:      rel.Chart.Name() + "-" + rel.Chart.Metadata.Version,
+			AppVersion: rel.Chart.Metadata.AppVersion,
+		})
+	}
+	return out
 }
 
 // FetchReleases retrieves all Helm releases across every namespace.  The
 // returned slice uses the internal Release struct.  Debugging information is
 // printed to stdout when the debug flag is true.
 func FetchReleases(settings *cli.EnvSettings, debug bool) ([]Release, error) {
-    cfg := new(action.Configuration)
-    cfgGetter := &genericclioptions.ConfigFlags{
-        KubeConfig: &settings.KubeConfig,
-        Context:    &settings.KubeContext,
-    }
-    if err := cfg.Init(cfgGetter, "", os.Getenv("HELM_DRIVER"), nil); err != nil {
-        return nil, fmt.Errorf("failed to initialize Helm config: %w", err)
-    }
+	cfg := new(action.Configuration)
+	cfgGetter := &genericclioptions.ConfigFlags{
+		KubeConfig: &settings.KubeConfig,
+		Context:    &settings.KubeContext,
+	}
+	if err := cfg.Init(cfgGetter, "", os.Getenv("HELM_DRIVER"), nil); err != nil {
+		return nil, fmt.Errorf("failed to initialize Helm config: %w", err)
+	}
 
-    listCmd := action.NewList(cfg)
-    listCmd.AllNamespaces = true
-    listCmd.Deployed = true
-    listCmd.Failed = true
-    listCmd.Pending = true
-    listCmd.Uninstalling = true
-    listCmd.Uninstalled = true
+	listCmd := action.NewList(cfg)
+	listCmd.AllNamespaces = true
+	listCmd.Deployed = true
+	listCmd.Failed = true
+	listCmd.Pending = true
+	listCmd.Uninstalling = true
+	listCmd.Uninstalled = true
 
-    releaseList, err := listCmd.Run()
-    if err != nil {
-        return nil, fmt.Errorf("failed to list releases: %w", err)
-    }
+	releaseList, err := listCmd.Run()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list releases: %w", err)
+	}
 
-    if debug {
-        for _, rel := range releaseList {
-            fmt.Printf("Debug: loaded release %s in namespace %s (chart: %s, app_version: %s)\n", rel.Name, rel.Namespace, rel.Chart.Name()+"-"+rel.Chart.Metadata.Version, rel.Chart.Metadata.AppVersion)
-        }
-    }
+	if debug {
+		for _, rel := range releaseList {
+			fmt.Printf("Debug: loaded release %s in namespace %s (chart: %s, app_version: %s)\n", rel.Name, rel.Namespace, rel.Chart.Name()+"-"+rel.Chart.Metadata.Version, rel.Chart.Metadata.AppVersion)
+		}
+	}
 
-    return convertReleaseList(releaseList), nil
+	return convertReleaseList(releaseList), nil
 }

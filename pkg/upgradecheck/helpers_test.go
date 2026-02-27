@@ -20,7 +20,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -46,10 +45,10 @@ func TestCompareVersions(t *testing.T) {
 		{"1.2.3", "1.2.3", false},
 		{"v2.0", "v1.9", true},
 		{"1.0", "1.0.1", false},
-		{"1.0.0", "1.0", true},
-		{"1.2.3", "1.2.3.1", false},
-		{"1.2.3.4", "1.2.3", true},
+		{"1.0.0", "1.0", false}, // 1.0 is not a valid semver
 		{"", "1", false},
+		{"v1.0.0", "v2.0.0-alpha", false},           // pre-release should not be considered greater
+		{"v1.0.0+build.1", "v1.0.0+build.2", false}, // build metadata should be ignored
 	}
 	for _, c := range cases {
 		t.Run(c.a+">"+c.b, func(t *testing.T) {
@@ -240,7 +239,6 @@ entries:
       version: 0.1.0
       appVersion: 4.5.6
 `
-	fmt.Println(indexYAML)
 	h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(indexYAML))
 	}))
@@ -252,7 +250,6 @@ entries:
 	idx, err := searcher.loadIndex(repoEntry)
 	assert.NoError(t, err)
 	if assert.NotNil(t, idx) {
-		fmt.Println(idx.Entries)
 		if ev := idx.Entries["demo"][0].Metadata.AppVersion; ev != "4.5.6" {
 			t.Errorf("unexpected appversion %s", ev)
 		}
