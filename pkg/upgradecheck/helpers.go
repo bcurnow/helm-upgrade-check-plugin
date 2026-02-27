@@ -42,23 +42,34 @@ import (
 // It strips any leading "v" prefixes and compares numeric components left to
 // right.  When the initial segments are equal, the longer version string is
 // considered greater (e.g. "1.2.0" > "1.2").
-func CompareVersions(v1, v2 string) bool {
-	// Use Masterminds/semver which supports prerelease comparison and a
-	// robust semantic version implementation. Fall back to string
-	// comparison when parsing fails.
+// If includePrerel is true, then the comparison will consider pre-release versions
+// pre-release versions with a higher major.minor.patch will be considered greater than stable versions with a lower major.minor.patch
+func CompareVersions(v1, v2 string, includePrerel bool) bool {
+	v1 = strings.TrimPrefix(v1, "v")
+	v2 = strings.TrimPrefix(v2, "v")
 
-	// Use a constraint to compare v1 against v2, this will ignore any pre-release information
-	c, err := semver.NewConstraint("> " + v2)
-	if err != nil {
-		//v2 is not valid, if it's not a valid semver, don't consider it upgradable
-		return false
-	}
+	// Parse the versions, if either is fails (is not a semver), return false to avoid false positives.
+	// This means that if a chart has an invalid version, we won't consider it upgradable, which is a safer failure mode than the opposite.
 	sv1, err := semver.NewVersion(v1)
 	if err != nil {
-		//v1 is not valid, if it's not a valid semver, don't consider it upgradable
 		return false
 	}
-	return c.Check(sv1)
+	sv2, err := semver.NewVersion(v2)
+	if err != nil {
+		return false
+	}
+
+	// If pre-releases are not included then any pre-release version is never greater than any stable
+	if !includePrerel && sv1.Prerelease() != "" {
+		if sv2.Prerelease() == "" {
+			// sv2 is a stable version, pre-release are not considered greater than stables, so return false
+			return false
+		}
+	}
+
+	// At this point, there are two possible scenarios:
+
+	return sv1.GreaterThan(sv2)
 }
 
 // LoadRepoEntries reads the Helm repository YAML file specified by the
@@ -71,9 +82,7 @@ func LoadRepoEntries(settings *cli.EnvSettings) ([]*repo.Entry, error) {
 		return nil, err
 	}
 	entries := make([]*repo.Entry, len(repos.Repositories))
-	for i, e := range repos.Repositories {
-		entries[i] = e
-	}
+	copy(entries, repos.Repositories)
 	return entries, nil
 }
 
@@ -164,7 +173,7 @@ func (s *ChartSearcher) Search(chartName string) ChartSearchResult {
 	var latest string
 	for r := range ch {
 		uniq[r.repo] = struct{}{}
-		if latest == "" || CompareVersions(r.version, latest) {
+		if latest == "" || CompareVersions(r.version, latest, true) {
 			latest = r.version
 		}
 	}

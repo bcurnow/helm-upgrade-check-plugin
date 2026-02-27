@@ -39,6 +39,7 @@ func main() {
 	var debug bool
 	var jsonOut bool
 	var version bool
+	var includePrerel bool
 
 	flag.BoolVar(&update, "update", false, "run 'helm repo update' before checking")
 	flag.BoolVar(&update, "u", false, "shorthand for --update")
@@ -47,6 +48,7 @@ func main() {
 	flag.BoolVar(&jsonOut, "json", false, "output results as JSON")
 	flag.BoolVar(&jsonOut, "j", false, "shorthand for --json")
 	flag.BoolVar(&version, "version", false, "print version and exit")
+	flag.BoolVar(&includePrerel, "include-prerelease", false, "consider pre-release versions as upgradable")
 	flag.Parse()
 
 	if version {
@@ -114,9 +116,9 @@ func main() {
 	var errors []upgradecheck.MissingChartError
 	for _, rel := range releases {
 		chartName := upgradecheck.ChartName(rel.Chart)
-		appVersion := rel.AppVersion
-		if appVersion == "" {
-			appVersion = "Unknown"
+		currentVersion := rel.AppVersion
+		if currentVersion == "" {
+			currentVersion = "Unknown"
 		}
 		info := searcher.Search(chartName)
 		if len(info.Repos) == 0 {
@@ -127,7 +129,7 @@ func main() {
 		if upgradeVersion == "" || upgradeVersion == "null" {
 			upgradeVersion = "N/A"
 		}
-		upgradable := upgradecheck.NeedsUpgrade(appVersion, upgradeVersion)
+		upgradable := upgradecheck.CompareVersions(upgradeVersion, currentVersion, includePrerel)
 		repoList := info.Repos
 
 		var commands []string
@@ -144,7 +146,7 @@ func main() {
 			ChartName:      chartName,
 			ReleaseName:    rel.Name,
 			Namespace:      rel.Namespace,
-			CurrentVersion: appVersion,
+			CurrentVersion: currentVersion,
 			UpgradeVersion: upgradeVersion,
 			Repos:          repoList,
 			Upgradable:     upgradable,

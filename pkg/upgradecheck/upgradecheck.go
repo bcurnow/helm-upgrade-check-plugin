@@ -17,39 +17,39 @@
 package upgradecheck
 
 import (
-    "strings"
+	"strings"
 )
 
 // Chart represents information about a Helm chart from a repository.
 type Chart struct {
-    Name       string // e.g. "stable/redis" or "bitnami/redis"
-    AppVersion string // application version available for this chart
+	Name       string // e.g. "stable/redis" or "bitnami/redis"
+	AppVersion string // application version available for this chart
 }
 
 // Release represents a Helm release installed in the cluster.
 type Release struct {
-    Name       string // release name
-    Namespace  string // Kubernetes namespace
-    Chart      string // chart name with version, e.g. "redis-14.8.8"
-    AppVersion string // application version of the deployed release
+	Name       string // release name
+	Namespace  string // Kubernetes namespace
+	Chart      string // chart name with version, e.g. "redis-14.8.8"
+	AppVersion string // application version of the deployed release
 }
 
 // MissingChartError is used to report releases that could not be matched
 // to a chart in any configured repository.
 type MissingChartError struct {
-    Release   string
-    Namespace string
-    Chart     string
+	Release   string
+	Namespace string
+	Chart     string
 }
 
 // ChartName strips the version suffix from the string that Helm returns
 // in the `.chart` field of `helm list`.
 // For example, "redis-14.8.8" becomes "redis".
 func ChartName(chart string) string {
-    if idx := strings.LastIndex(chart, "-"); idx != -1 {
-        return chart[:idx]
-    }
-    return chart
+	if idx := strings.LastIndex(chart, "-"); idx != -1 {
+		return chart[:idx]
+	}
+	return chart
 }
 
 // ChartIndex provides quick lookup of repository names and latest application
@@ -57,88 +57,74 @@ func ChartName(chart string) string {
 // the index is built once and then queried in constant time.
 
 type ChartIndex struct {
-    repos   map[string][]string // chartName -> list of repos
-    version map[string]string   // chartName -> latest app version
+	repos   map[string][]string // chartName -> list of repos
+	version map[string]string   // chartName -> latest app version
 }
 
 // NewChartIndex constructs an index from a slice of charts.
 func NewChartIndex(charts []Chart) *ChartIndex {
-    idx := &ChartIndex{
-        repos:   make(map[string][]string),
-        version: make(map[string]string),
-    }
-    for _, c := range charts {
-        if i := strings.Index(c.Name, "/"); i != -1 {
-            chartName := c.Name[i+1:]
-            repoName := c.Name[:i]
-            // record repo
-            idx.repos[chartName] = append(idx.repos[chartName], repoName)
-            // update version; later entries overwrite earlier ones, matching
-            // the behaviour of the old FindUpgradeVersion which kept the last
-            // matching item.
-            idx.version[chartName] = c.AppVersion
-        }
-    }
-    // deduplicate and apply bitnami rule
-    for chart, list := range idx.repos {
-        uniq := make(map[string]struct{})
-        for _, r := range list {
-            uniq[r] = struct{}{}
-        }
-        out := make([]string, 0, len(uniq))
-        for r := range uniq {
-            out = append(out, r)
-        }
-        if len(out) > 1 {
-            keep := make([]string, 0, len(out))
-            for _, r := range out {
-                if r == "bitnami" {
-                    continue
-                }
-                keep = append(keep, r)
-            }
-            if len(keep) > 0 {
-                out = keep
-            }
-        }
-        idx.repos[chart] = out
-    }
-    return idx
+	idx := &ChartIndex{
+		repos:   make(map[string][]string),
+		version: make(map[string]string),
+	}
+	for _, c := range charts {
+		if i := strings.Index(c.Name, "/"); i != -1 {
+			chartName := c.Name[i+1:]
+			repoName := c.Name[:i]
+			// record repo
+			idx.repos[chartName] = append(idx.repos[chartName], repoName)
+			// update version; later entries overwrite earlier ones, matching
+			// the behaviour of the old FindUpgradeVersion which kept the last
+			// matching item.
+			idx.version[chartName] = c.AppVersion
+		}
+	}
+	// deduplicate and apply bitnami rule
+	for chart, list := range idx.repos {
+		uniq := make(map[string]struct{})
+		for _, r := range list {
+			uniq[r] = struct{}{}
+		}
+		out := make([]string, 0, len(uniq))
+		for r := range uniq {
+			out = append(out, r)
+		}
+		if len(out) > 1 {
+			keep := make([]string, 0, len(out))
+			for _, r := range out {
+				if r == "bitnami" {
+					continue
+				}
+				keep = append(keep, r)
+			}
+			if len(keep) > 0 {
+				out = keep
+			}
+		}
+		idx.repos[chart] = out
+	}
+	return idx
 }
 
 // Repos returns repository names containing chart.
 func (ci *ChartIndex) Repos(chartName string) []string {
-    return ci.repos[chartName]
+	return ci.repos[chartName]
 }
 
 // UpgradeVersion returns the latest app version for chart.
 func (ci *ChartIndex) UpgradeVersion(chartName string) string {
-    return ci.version[chartName]
+	return ci.version[chartName]
 }
 
 // FindRepos returns the list of repositories that contain a chart with the
 // given name.  Maintained for backwards compatibility if callers still use it.
 func FindRepos(chartName string, charts []Chart) []string {
-    return NewChartIndex(charts).Repos(chartName)
+	return NewChartIndex(charts).Repos(chartName)
 }
 
 // FindUpgradeVersion returns the most recent app_version for a given chart
 // name.  It iterates through the list and remembers the last matching entry,
 // which replicates `jq 'last(...)'` behaviour from the shell version.
 func FindUpgradeVersion(chartName string, charts []Chart) string {
-    return NewChartIndex(charts).UpgradeVersion(chartName)
-}
-
-
-// NeedsUpgrade compares the currently deployed application version with the
-// version discovered in the repository.  Both arguments are normalized by
-// stripping a leading "v" before comparison.  The function returns true when
-// the values differ and the upgrade version is not "null".
-func NeedsUpgrade(current, upgrade string) bool {
-    cur := strings.TrimPrefix(current, "v")
-    up := strings.TrimPrefix(upgrade, "v")
-    if cur == "" || up == "" {
-        return false
-    }
-    return cur != up && upgrade != "null"
+	return NewChartIndex(charts).UpgradeVersion(chartName)
 }

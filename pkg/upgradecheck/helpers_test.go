@@ -20,6 +20,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -38,21 +39,26 @@ import (
 
 func TestCompareVersions(t *testing.T) {
 	cases := []struct {
-		a, b string
-		want bool
+		a, b          string
+		includePrerel bool
+		want          bool
 	}{
-		{"1.2.3", "1.2.2", true},
-		{"1.2.3", "1.2.3", false},
-		{"v2.0", "v1.9", true},
-		{"1.0", "1.0.1", false},
-		{"1.0.0", "1.0", false}, // 1.0 is not a valid semver
-		{"", "1", false},
-		{"v1.0.0", "v2.0.0-alpha", false},           // pre-release should not be considered greater
-		{"v1.0.0+build.1", "v1.0.0+build.2", false}, // build metadata should be ignored
+		{"1.2.3", "1.2.2", true, true},
+		{"1.2.3", "1.2.3", true, false},
+		{"v2.0", "v1.9", true, true},
+		{"1.0", "1.0.1", true, false},
+		{"1.0.0", "1.0", true, false}, // 1.0 is not a valid semver
+		{"", "1", true, false},
+		{"v1.19.4", "1.18.2", true, true},
+		{"v1.20.0-alpha.1", "v1.19.4", true, true},           // pre-release is greater
+		{"v1.20.0-alpha.1", "v1.19.4", false, false},         // pre-release should not be considered greater
+		{"v1.20.0-alpha.1", "v1.19.4-alpha.1", false, true},  // If both are pre-release, the greater pre-release should win
+		{"v1.19.0-alpha.1", "v1.20.4-alpha.1", false, false}, // If both are pre-release, the greater pre-release should win
+		{"v1.0.0+build.1", "v1.0.0+build.2", true, false},    // build metadata should be ignored
 	}
 	for _, c := range cases {
-		t.Run(c.a+">"+c.b, func(t *testing.T) {
-			got := CompareVersions(c.a, c.b)
+		t.Run(c.a+">"+c.b+" includePrerel="+fmt.Sprintf("%t", c.includePrerel), func(t *testing.T) {
+			got := CompareVersions(c.a, c.b, c.includePrerel)
 			assert.Equal(t, c.want, got)
 		})
 	}
@@ -95,12 +101,12 @@ func TestChartSearcher_Search(t *testing.T) {
 
 	searcher.idxCache["r1"] = &repo.IndexFile{
 		Entries: map[string]repo.ChartVersions{
-			"redis": repo.ChartVersions{&repo.ChartVersion{Metadata: &chart.Metadata{AppVersion: "1.0.0"}}},
+			"redis": {&repo.ChartVersion{Metadata: &chart.Metadata{AppVersion: "1.0.0"}}},
 		},
 	}
 	searcher.idxCache["bitnami"] = &repo.IndexFile{
 		Entries: map[string]repo.ChartVersions{
-			"redis": repo.ChartVersions{&repo.ChartVersion{Metadata: &chart.Metadata{AppVersion: "2.0.0"}}},
+			"redis": {&repo.ChartVersion{Metadata: &chart.Metadata{AppVersion: "2.0.0"}}},
 		},
 	}
 

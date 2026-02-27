@@ -17,87 +17,67 @@
 package upgradecheck
 
 import (
-    "testing"
+	"testing"
 )
 
 func TestChartName(t *testing.T) {
-    cases := map[string]string{
-        "redis-14.8.8":     "redis",
-        "nginx-1.2.3":      "nginx",
-        "simple":           "simple",
-        "complex-name-0.1": "complex-name",
-    }
-    for in, want := range cases {
-        if got := ChartName(in); got != want {
-            t.Errorf("ChartName(%q)=%q, want %q", in, got, want)
-        }
-    }
+	cases := map[string]string{
+		"redis-14.8.8":     "redis",
+		"nginx-1.2.3":      "nginx",
+		"simple":           "simple",
+		"complex-name-0.1": "complex-name",
+	}
+	for in, want := range cases {
+		if got := ChartName(in); got != want {
+			t.Errorf("ChartName(%q)=%q, want %q", in, got, want)
+		}
+	}
 }
 
 func TestFindRepos(t *testing.T) {
-    charts := []Chart{
-        {Name: "bitnami/redis", AppVersion: "6.0.1"},
-        {Name: "stable/redis", AppVersion: "6.0.0"},
-        {Name: "bitnami/nginx", AppVersion: "1.2.3"},
-    }
+	charts := []Chart{
+		{Name: "bitnami/redis", AppVersion: "6.0.1"},
+		{Name: "stable/redis", AppVersion: "6.0.0"},
+		{Name: "bitnami/nginx", AppVersion: "1.2.3"},
+	}
 
-    idx := NewChartIndex(charts)
+	idx := NewChartIndex(charts)
 
-    // redis exists in bitnami and stable; bitnami should be removed
-    repos := idx.Repos("redis")
-    if len(repos) != 1 || repos[0] != "stable" {
-        t.Errorf("expected single repo 'stable', got %v", repos)
-    }
+	// redis exists in bitnami and stable; bitnami should be removed
+	repos := idx.Repos("redis")
+	if len(repos) != 1 || repos[0] != "stable" {
+		t.Errorf("expected single repo 'stable', got %v", repos)
+	}
 
-    // nginx only in bitnami
-    repos = idx.Repos("nginx")
-    if len(repos) != 1 || repos[0] != "bitnami" {
-        t.Errorf("expected single repo 'bitnami', got %v", repos)
-    }
+	// nginx only in bitnami
+	repos = idx.Repos("nginx")
+	if len(repos) != 1 || repos[0] != "bitnami" {
+		t.Errorf("expected single repo 'bitnami', got %v", repos)
+	}
 
-    // nonexistent chart
-    repos = idx.Repos("doesnotexist")
-    if len(repos) != 0 {
-        t.Errorf("expected no repos, got %v", repos)
-    }
+	// nonexistent chart
+	repos = idx.Repos("doesnotexist")
+	if len(repos) != 0 {
+		t.Errorf("expected no repos, got %v", repos)
+	}
 }
 
 func TestFindUpgradeVersion(t *testing.T) {
-    charts := []Chart{
-        {Name: "bitnami/redis", AppVersion: "6.0.1"},
-        {Name: "stable/redis", AppVersion: "6.0.0"},
-        {Name: "bitnami/nginx", AppVersion: "1.2.3"},
-    }
+	charts := []Chart{
+		{Name: "bitnami/redis", AppVersion: "6.0.1"},
+		{Name: "stable/redis", AppVersion: "6.0.0"},
+		{Name: "bitnami/nginx", AppVersion: "1.2.3"},
+	}
 
-    idx := NewChartIndex(charts)
+	idx := NewChartIndex(charts)
 
-    if v := idx.UpgradeVersion("redis"); v != "6.0.0" {
-        t.Errorf("expected 6.0.0, got %s", v)
-    }
-    if v := idx.UpgradeVersion("nginx"); v != "1.2.3" {
-        t.Errorf("expected 1.2.3, got %s", v)
-    }
-    if v := idx.UpgradeVersion("none"); v != "" {
-        t.Errorf("expected empty string, got %s", v)
-    }
-}
-
-func TestNeedsUpgrade(t *testing.T) {
-    cases := []struct{
-        cur string
-        up  string
-        want bool
-    }{
-        {"1.2.3", "1.2.3", false},
-        {"v1.2.3", "1.2.3", false},
-        {"1.2.3", "v1.2.4", true},
-        {"", "1.2.3", false},
-        {"1.2.3", "", false},
-        {"1.2.3", "null", false},
-    }
-    for _, c := range cases {
-        if got := NeedsUpgrade(c.cur, c.up); got != c.want {
-            t.Errorf("NeedsUpgrade(%q,%q)=%v, want %v", c.cur, c.up, got, c.want)
-        }
-    }
+	if v := idx.UpgradeVersion("redis"); v != "6.0.0" {
+		t.Errorf("expected 6.0.0, got %s", v)
+	}
+	if v := idx.UpgradeVersion("nginx"); v != "1.2.3" {
+		t.Errorf("expected 1.2.3, got %s", v)
+	}
+	if v := idx.UpgradeVersion("none"); v != "" {
+		t.Errorf("expected empty string, got %s", v)
+	}
 }
