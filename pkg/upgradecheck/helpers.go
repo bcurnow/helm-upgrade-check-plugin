@@ -49,6 +49,7 @@ func CompareVersions(v1, v2 string) bool {
     v1 = strings.TrimPrefix(v1, "v")
     v2 = strings.TrimPrefix(v2, "v")
 
+	constraint := semver.NewConstraint("> " + v1)
     sv1, err1 := semver.NewVersion(v1)
     sv2, err2 := semver.NewVersion(v2)
     if err1 == nil && err2 == nil {
