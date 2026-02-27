@@ -63,4 +63,4 @@ changelog:
       - Merge branch
 
 env_files:
-  github_token: ~/.config/goreleaser/zhelm-update-plugin-github-token
+  github_token: ~/.config/goreleaser/helm-update-plugin-github-token
