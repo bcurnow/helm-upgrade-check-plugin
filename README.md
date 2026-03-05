@@ -240,16 +240,6 @@ Outputs to `bin/helm-upgrade-check-1.0.0`.
 
 See [LICENSE](LICENSE) file for details.
 
-## Changelog
+## Change Log
 
-### Version 1.0.0 (February 26, 2026)
-
-**Initial release**
-
-- Full cluster scanning for deployed releases
-- Multi-repository support with smart deduplication
-- On-demand chart index loading and caching
-- Semantic version comparison
-- Colored terminal output (with TTY detection)
-- Comprehensive upgrade command generation
-- Debug mode for troubleshooting
+See [CHANGELOG.md](CHANGELOG.md) file for details.
