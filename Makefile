@@ -3,7 +3,7 @@
 BINARY_NAME=helm-upgrade-check
 BIN_DIR=bin
 CMD_DIR=cmd/$(BINARY_NAME)
-VERSION=1.0.0
+VERSION=1.0.1
 
 all: tidy test build
 
