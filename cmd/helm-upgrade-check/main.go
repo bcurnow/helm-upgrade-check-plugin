@@ -23,7 +23,7 @@ import (
 	"os"
 	"strings"
 
-	"helm-update-plugin/pkg/upgradecheck"
+	"helm-upgrade-check-plugin/pkg/upgradecheck"
 
 	"github.com/fatih/color"
 	"helm.sh/helm/v3/pkg/cli"

@@ -43,8 +43,8 @@ helm plugin install https://github.com/bcurnow/helm-upgrade-check-plugin.git
 Or for direct installation from a local checkout:
 
 ```bash
-git clone https://github.com/bcurnow/helm-update-plugin.git
-cd helm-update-plugin
+git clone https://github.com/bcurnow/helm-upgrade-check-plugin.git
+cd helm-upgrade-check-plugin
 make build
 helm plugin install .
 ```

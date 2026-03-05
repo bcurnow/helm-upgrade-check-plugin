@@ -25,7 +25,8 @@ import (
 	"strings"
 	"testing"
 
-	"helm-update-plugin/pkg/upgradecheck"
+	"helm-upgrade-check-plugin/pkg/upgradecheck"
+
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"

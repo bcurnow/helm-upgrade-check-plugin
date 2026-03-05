@@ -1,4 +1,4 @@
-module helm-update-plugin
+module helm-upgrade-check-plugin
 
 go 1.25.0
 

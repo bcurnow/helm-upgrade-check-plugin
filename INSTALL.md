@@ -29,8 +29,8 @@ helm plugin install https://github.com/bcurnow/helm-upgrade-check-plugin.git
 Clone the repository and install locally:
 
 ```bash
-git clone https://github.com/bcurnow/helm-update-plugin.git
-cd helm-update-plugin
+git clone https://github.com/bcurnow/helm-upgrade-check-plugin.git
+cd helm-upgrade-check-plugin
 make build
 helm plugin install .
 ```
@@ -41,8 +41,8 @@ helm plugin install .
 
 ```bash
 # Build from source
-git clone https://github.com/bcurnow/helm-update-plugin.git
-cd helm-update-plugin
+git clone https://github.com/bcurnow/helm-upgrade-check-plugin.git
+cd helm-upgrade-check-plugin
 make build
 ```
 
@@ -109,7 +109,7 @@ helm plugin install https://github.com/bcurnow/helm-upgrade-check-plugin.git
 Rebuild and reinstall:
 
 ```bash
-cd helm-update-plugin
+cd helm-upgrade-check-plugin
 git pull
 make clean build
 helm plugin uninstall upgrade-check
@@ -215,8 +215,8 @@ helm repo update
 
 ```bash
 # Clone repository
-git clone https://github.com/bcurnow/helm-update-plugin.git
-cd helm-update-plugin
+git clone https://github.com/bcurnow/helm-upgrade-check-plugin.git
+cd helm-upgrade-check-plugin
 
 # Install dependencies
 make tidy
@@ -248,6 +248,6 @@ GOOS=windows GOARCH=amd64 make build
 
 ## Getting Help
 
-- [GitHub Issues](https://github.com/bcurnow/helm-update-plugin/issues) — Report bugs or request features
-- [GitHub Discussions](https://github.com/bcurnow/helm-update-plugin/discussions) — Ask questions and discuss
+- [GitHub Issues](https://github.com/bcurnow/helm-upgrade-check-plugin/issues) — Report bugs or request features
+- [GitHub Discussions](https://github.com/bcurnow/helm-upgrade-check-plugin/discussions) — Ask questions and discuss
 - Check existing [documentation](README.md)
