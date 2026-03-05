@@ -1,16 +1,16 @@
 version: 2
 
-project_name: helm-update-plugin
+project_name: helm-upgrade-check-plugin
 
 release:
   github:
     owner: bcurnow
-    name: helm-update-plugin
+    name: helm-upgrade-check-plugin
   draft: false
   prerelease: "false"
 
 builds:
-  - id: helm-update-plugin
+  - id: helm-upgrade-check-plugin
     main: ./cmd/helm-upgrade-check
     binary: helm-upgrade-check
     env:
@@ -27,7 +27,7 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
 
 archives:
-  - id: helm-update-plugin-archive
+  - id: helm-upgrade-check-plugin-archive
     format: tar.gz
     format_overrides:
       - goos: windows
@@ -57,4 +57,4 @@ changelog:
       - Merge branch
 
 env_files:
-  github_token: ~/.config/goreleaser/helm-update-plugin-github-token
+  github_token: ~/.config/goreleaser/helm-upgrade-check-plugin-github-token
